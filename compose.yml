@@ -1,0 +1,45 @@
+services:
+  tcg-app:
+    container_name: tcg-scraper-app
+    build: .
+    ports:
+      - ${EXPOSE_PORT}:${PORT}
+    restart: on-failure
+    volumes:
+      - ./:/app/
+    depends_on:
+      - tcg-db
+    env_file:
+      - .env
+    environment:
+      - DB_CONNECTION=${DB_HOST}:${DB_PORT}
+      - WAIT_HOSTS=${DB_HOST}:${DB_PORT}
+      - WAIT_BEFORE_HOSTS=15
+      - WAIT_SLEEP_INTERVAL=3
+    networks:
+      - tcg-scraper-stack
+
+  tcg-db:
+    container_name: tcg-scraper-db
+    build:
+      context: .
+      dockerfile: .local-database/Dockerfile
+    ports:
+      - ${EXPOSE_DB_PORT}:${DB_PORT}
+    environment:
+      - MYSQL_ROOT_HOST=${DB_HOST}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - tcg-scraper-db:/var/lib/mysql
+    networks:
+      - tcg-scraper-stack
+
+volumes:
+  tcg-scraper-db:
+
+networks:
+  tcg-scraper-stack:
+    driver: bridge
